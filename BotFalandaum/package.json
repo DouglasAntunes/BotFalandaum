@@ -1,19 +1,22 @@
 {
-  "name": "BotFalandaum",
+  "name": "botfalandaum",
   "version": "1.0.0",
-  "description": "",
+  "description": "Based on the AirHornBot. another bot for Discord (TODO)",
+  "author": "BlackBurn <https://github.com/DouglasAntunes>",
+  "contributors": [
+    "BlackBurn <https://github.com/DouglasAntunes>",
+    "BRGheet <https://github.com/BRGheet>"
+  ],
+  "license": "MIT",
   "main": "main.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
-  "license": "ISC",
   "dependencies": {
-    "bufferutil": "^3.0.3",
+    "bufferutil": "^3.0.5",
     "discord.js": "^11.3.0",
     "ffmpeg-stream": "^0.5.0",
     "opusscript": "0.0.6",
-    "pm2": "^2.10.2",
     "streamifier": "^0.1.1"
   }
 }

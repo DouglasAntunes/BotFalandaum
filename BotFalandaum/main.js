@@ -1,11 +1,12 @@
+"use strict";
 const fs = require('fs');
 const { lstatSync, readdirSync } = require('fs');
 const { join } = require('path');
 const path = require('path');
-const Discord = require("discord.js");
-const config = require("./config.json");
+const Discord = require('discord.js');
+const config = require('./config.json');
 const prefix = config.prefix;
-var streamifier = require('streamifier');
+const streamifier = require('streamifier');
 //Constants
 const bot = new Discord.Client();
 const isDirectory = source => lstatSync(source).isDirectory();
@@ -14,106 +15,6 @@ const soundCollection = new Array();
 const soundFolder = path.join(__dirname, "/audios_opus/");
 const audioFolders = getDirectories(soundFolder);
 //Classes
-class Play {
-    constructor(message, sound) {
-        this.message = message;
-        this.sound = sound;
-    }
-
-    getUser() {
-        return this.message.author;
-    }
-
-    getUserId() {
-        getUser().id;
-    }
-};
-
-class Queue {
-    constructor(client, maxQueue) {
-        this.maxQueue = maxQueue;
-        this.queues = {};    //queue[serverid]{}
-        this.client = client;
-    }
-
-    getQueue(serverid) {
-        if(!this.queues[serverid]) {
-            this.queues[serverid] = [];
-        }
-        return this.queues[serverid];
-    }
-
-    add(message, sound) {
-        const queue = this.getQueue(message.guild.id);
-        if(queue.length >= this.maxQueue)
-        {
-            return message.channel.send("Queue Full");
-        }
-        queue.push(new Play(message, sound));
-        if(queue.length === 1 || !(this.client.VoiceConnections.find(val => val.channel.guild.id == message.guild.id) === undefined)) {
-            this.play(message, queue);
-        }
-    }
-
-    remove(message) {
-        const queue = this.getQueue(message.guild.id);
-        queue.shift();
-    }
-    
-    play(message, queue) {
-
-        if(queue.length === 0) {
-            const voiceConnection = this.client.voiceConnections.find(val => val.channel.guild.id == message.guild.id);
-            if (voiceConnection !== undefined) return voiceConnection.disconnect();
-        }
-
-        new Promise((resolve, reject) => {
-            const voiceConnection = this.client.voiceConnections.find(val => val.channel.guild.id == message.guild.id);
-            
-            if (voiceConnection === undefined) {
-                // Check if the user is in a voice channel.
-                if (message.member.voiceChannel && message.member.voiceChannel.joinable) {
-                    message.member.voiceChannel.join()
-                    .then(connection => {
-                        resolve(connection);
-                    })
-                    .catch((error) => {
-                        console.log(error);
-                    });
-                } else if (!message.member.voiceChannel.joinable) {
-                    message.channel.send("I can't join in this Voice Channel.");
-                    reject();
-                } else {
-                    // Otherwise, clear the queue and do nothing.
-                    queue.splice(0, queue.length);
-                    reject();
-                }
-            } else {
-                resolve(voiceConnection);
-            }
-        })
-        .then(connection => {
-            const currentSound = queue[0];
-            console.log("Playing " + currentSound.name);
-            var stream = streamifier.createReadStream(currentSound.sound.buffer);
-            var audio = connection.playStream(stream);
-
-            connection.on('error', (error) => {
-                console.log("Error on execute sound " + currentSound.name + "by user " + currentSound.getUser().name);
-            });
-
-            audio.on("end", end =>{
-                setTimeout(()=> {   //Delay
-                    if(queue.length > 0) {
-                        this.remove(message);
-                        this.play(message, queue);
-                    }
-                }, 1000);
-            });
-        }).catch(console.error);
-    }
-};
-
 class SoundCollection {
     constructor(prefix, commands, sounds) {
         this.prefix = prefix;
@@ -171,18 +72,121 @@ class Sound {
     }
 
     load(soundCollection) {
-        console.log("Loading " + this.name);
+        //console.log("Loading " + this.name);
         this.buffer = fs.readFileSync(path.join(soundFolder,soundCollection.prefix, this.name + '.opus'));
         if(this.buffer.length == 0) {
-            console.log("Error on load " + this.name);
+            console.log(`Error on load ${this.name}`);
         }
     }
 };
 
+class Play {
+    constructor(message, sound) {
+        this.message = message;
+        this.sound = sound;
+    }
+
+    getUser() {
+        return this.message.author.username;
+    }
+
+    getUserId() {
+        this.getUser().id;
+    }
+};
+
+class Queue {
+    constructor(client, maxQueue) {
+        this.maxQueue = maxQueue;
+        this.queues = {};    //queue[serverid]{}
+        this.client = client;
+    }
+
+    getQueue(serverid) {
+        if(!this.queues[serverid]) {
+            this.queues[serverid] = [];
+        }
+        return this.queues[serverid];
+    }
+
+    add(message, sound) {
+        const queue = this.getQueue(message.guild.id);
+        if(queue.length >= this.maxQueue)
+        {
+            return message.channel.send("Queue Full");
+        }
+        queue.push(new Play(message, sound));
+        if(queue.length === 1 || !(this.client.VoiceConnections.find(val => val.channel.guild.id == message.guild.id) === undefined)) {
+            this.play(message, queue);
+        }
+    }
+
+    remove(message) {
+        const queue = this.getQueue(message.guild.id);
+        queue.shift();
+    }
+    
+    play(message, queue) {
+        if(queue.length === 0) {
+            var voiceConnection = this.client.voiceConnections.find(val => val.channel.guild.id == message.guild.id);
+            if (voiceConnection !== undefined) return voiceConnection.disconnect();
+        }
+
+        new Promise((resolve, reject) => {
+            var voiceConnection = this.client.voiceConnections.find(val => val.channel.guild.id == message.guild.id);
+            
+            if (voiceConnection === undefined) {
+                // Check if the user is in a voice channel.
+                if (message.member.voiceChannel && message.member.voiceChannel.joinable) {
+                    message.member.voiceChannel.join()
+                    .then(connection => {
+                        resolve(connection);
+                    })
+                    .catch((error) => {
+                        console.log(error);
+                        reject();
+                    });
+                } else if (!message.member.voiceChannel.joinable) {
+                    message.channel.send("I can't join in this Voice Channel.");
+                    reject();
+                } else {
+                    // Otherwise, clear the queue and do nothing.
+                    queue.splice(0, queue.length);
+                    reject();
+                }
+            } else {
+                resolve(voiceConnection);
+            }
+        })
+        .then(connection => {
+            var currentItem = queue[0];
+            var currentSound = currentItem.sound;
+            console.log(queue)
+            console.log(`Playing ${currentSound.name} by user ${currentItem.getUser()}`);
+            var stream = streamifier.createReadStream(currentSound.buffer);
+            var audio = connection.playStream(stream);
+            connection.on('error', (error) => {
+                console.log(`Error on execute sound ${currentSound.name} by user ${currentItem.getUser()}`);
+            });
+
+            audio.on("end", end =>{
+                setTimeout(()=> {   //Delay
+                    if(queue.length > 0) {
+                        this.remove(message);
+                        this.play(message, queue);
+                    }
+                }, 1000);
+            });
+        }).catch(console.error);
+    }
+};
 //
 const queue = new Queue(bot, config.maxQueue);
 
-//Main
+//Main Program
+
+//Load Audios
+console.log(`Loading Audios...`);
 audioFolders.forEach(element => {
     var folderName = path.basename(element);
     //console.log(folderName);
@@ -200,12 +204,21 @@ audioFolders.forEach(element => {
     sC.load();
     soundCollection.push(sC);
 });
+console.log(`Audios Loaded!`);
 
 //buffer do audio
 var audio_buffer = fs.readFileSync(path.join(__dirname,"/audios_opus/darksouls/good.opus"));
 
+//Discord Client
 bot.on("ready",function(){
-    console.log("Prontinho mestre >////<");
+    
+    console.log(`Logged In as ${bot.user.tag}`);
+    
+    //Memory Usage
+    const used = process.memoryUsage();
+    for (let key in used) {
+        console.log(`   ${key} ${Math.round(used[key] / 1024 / 1024 * 100) / 100} MB`);
+    }
 });
 
 bot.on('message', (message) =>{
@@ -251,7 +264,7 @@ bot.on('message', (message) =>{
                             })
                         .catch(console.error);
                         } else {
-                            message.reply("Não implementado ^^");
+                            message.reply("Not Implemented Yet! :V");
                         }
                     }
                     case 3: {
@@ -286,11 +299,13 @@ bot.on('message', (message) =>{
     }
 
     if (message.content == "!teste2") {
+        console.log(bot.voiceConnections);
         voiceChannel.join()
             .then(connection => {
                 var buffer = fs.readFileSync(path.join(soundFolder, "carlosalberto" ,"chaos.opus"));
                 var stream = streamifier.createReadStream(buffer);
                 const som = connection.playStream(stream);
+                console.log(bot.voiceConnections);
                 som.on("end", end =>{
                     voiceChannel.leave();
                 })
@@ -365,10 +380,4 @@ bot.on('message', (message) =>{
     //
 });
 
-/*  //Memory Usage
-const used = process.memoryUsage();
-for (let key in used) {
-  console.log(`${key} ${Math.round(used[key] / 1024 / 1024 * 100) / 100} MB`);
-}
-*/
 bot.login(config.token);
