@@ -19,9 +19,10 @@ namespace BotFalandaum
         static string BotTokenDefault;
 
         //
-        private DiscordShardedClient _client;
+        private DiscordSocketClient _client;
         private static SoundCollection c;
-
+        private IAudioClient _audioClient;
+        public IVoiceChannel VoiceChannel { get; private set; }
 
         static void Main(string[] args)
         {
@@ -41,7 +42,7 @@ namespace BotFalandaum
             c = new SoundCollection("airhorn", commands, sounds);
             c.Load();
 
-            Console.ReadKey();
+            //Console.ReadKey();
 
             new Program().MainAsync().GetAwaiter().GetResult();
 
@@ -72,7 +73,7 @@ namespace BotFalandaum
 
         public async Task MainAsync()
         {
-            _client = new DiscordShardedClient();
+            _client = new DiscordSocketClient();
             
             _client.Log += Log;
             _client.MessageReceived += MessageReceived;
@@ -92,7 +93,7 @@ namespace BotFalandaum
             }
             if(message.Content == "!test")
             {
-                await JoinChannel(message);
+                JoinChannel(message).Start();
             }
         }
 
@@ -105,34 +106,47 @@ namespace BotFalandaum
         public async Task JoinChannel(SocketMessage msg, IVoiceChannel channel = null)
         {
             channel = channel ?? (msg.Author as IGuildUser)?.VoiceChannel;
+            
             if(channel == null)
             {
-
+                //User isnt on a VoiceChannel
+                await msg.Channel.SendMessageAsync("Você não está em um Voice Chat!");
             }
-            Console.WriteLine("caraioo");
-            var audioClient = await channel.ConnectAsync();
-            Console.WriteLine("caraioo 2");
-
-
-            using (Stream stream = new MemoryStream(c.Sounds[0].Buffer))
+            else
             {
-                await SendAsync(audioClient, stream).ConfigureAwait(false); 
+                VoiceChannel = channel;
+                SendAudio().Start();
             }
-                
+
         }
 
-        private async Task SendAsync(IAudioClient client, Stream output)
+        private async Task<IAudioClient> GetAudioClient()
         {
-            Console.WriteLine(output.Length);
-            using (var discord = client.CreateOpusStream())
+            if(_audioClient == null)
             {
-                try {
-                    await output.CopyToAsync(discord);
-                }
-                finally {
-                    await discord.FlushAsync();
+                _audioClient = await VoiceChannel.ConnectAsync();
+            }
+            return _audioClient;
+        }
+
+        private async Task SendAsync(IAudioClient client, byte[] output)
+        {
+            var discord = client.CreateOpusStream();
+            try {
+                for(int i = 2; i < output.Length; i++)
+                {
+                    discord.WriteByte(output[i]);
                 }
             }
+            finally {
+                await discord.FlushAsync();
+            }
+        }
+
+        private async Task SendAudio()
+        {
+            var ac = await GetAudioClient();
+            await SendAsync(ac, c.Sounds[0].Buffer);
         }
     }
 }
