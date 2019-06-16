@@ -4,6 +4,7 @@ using Discord.Audio;
 using System;
 using System.Threading.Tasks;
 using System.Configuration;
+using System.IO;
 
 namespace BotFalandaum
 {
@@ -31,7 +32,7 @@ namespace BotFalandaum
             //Sound Load Test Sequence
             Sound[] sounds = {
                 new Sound("default", 1000, 250),
-                new Sound("clownshort", 800, 250)
+                //new Sound("clownshort", 800, 250)
             };
 
             string[] commands = {
@@ -128,14 +129,19 @@ namespace BotFalandaum
             return _audioClient;
         }
 
-        private async Task SendAsync(IAudioClient client, byte[] output)
+        private async Task SendAsync(IAudioClient client, Stream output)
         {
-            var discord = client.CreateDirectOpusStream();
-            try {
-                await discord.WriteAsync(output, 0, output.Length);
-            }
-            finally {
-                await discord.FlushAsync();
+            using (var discord = client.CreateDirectPCMStream(AudioApplication.Mixed))
+            //using (MemoryStream ms = new MemoryStream(output))
+            {
+                try
+                {
+                    await discord.CopyToAsync(output);
+                }
+                finally
+                {
+                    await discord.FlushAsync();
+                }
             }
         }
 
