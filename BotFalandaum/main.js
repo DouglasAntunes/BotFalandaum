@@ -15,82 +15,103 @@ const soundFolder = path.join(__dirname, "/audios_opus/");
 const audioFolders = getDirectories(soundFolder);
 //Classes
 class Play {
-    constructor(user, sound, voiceChannel) {
-        this.user = user;
+    constructor(message, sound) {
+        this.message = message;
         this.sound = sound;
-        this.voiceChannel = voiceChannel;
+    }
+
+    getUser() {
+        return this.message.author;
+    }
+
+    getUserId() {
+        getUser().id;
     }
 };
 
 class Queue {
-    constructor(maxQueue) {
-        this.list = new Array();
+    constructor(client, maxQueue) {
         this.maxQueue = maxQueue;
-        this.playing = false;
-        this.currentVoiceChannel = null;
-        this.connectedTo = null;
+        this.queues = {};    //queue[serverid]{}
+        this.client = client;
     }
 
-    add(user, sound, voiceChannel) {
-        this.list.push(new Play(user, sound, voiceChannel));
-        if(!this.playing) {
-            this.play();
+    getQueue(serverid) {
+        if(!this.queues[serverid]) {
+            this.queues[serverid] = [];
+        }
+        return this.queues[serverid];
+    }
+
+    add(message, sound) {
+        const queue = this.getQueue(message.guild.id);
+        if(queue.length >= this.maxQueue)
+        {
+            return message.channel.send("Queue Full");
+        }
+        queue.push(new Play(message, sound));
+        if(queue.length === 1 || !(this.client.VoiceConnections.find(val => val.channel.guild.id == message.guild.id) === undefined)) {
+            this.play(message, queue);
         }
     }
 
-    remove() {
-        this.list.shift();
+    remove(message) {
+        const queue = this.getQueue(message.guild.id);
+        queue.shift();
     }
     
-    play() {
-        if(!this.playing && this.list.length > 0){
-            this.playing = true;
+    play(message, queue) {
 
-            new Promise((resolve, reject) => {
-                //if(this.currentVoiceChannel === null || this.connectedTo === null) {
-                if(currentVoiceChannel != this.list[0].voiceChannel || this.connectedTo === null) {
-                    //currentVoiceChannel = this.list[0].voiceChannel;
-                    currentVoiceChannel.join()
+        if(queue.length === 0) {
+            const voiceConnection = this.client.voiceConnections.find(val => val.channel.guild.id == message.guild.id);
+            if (voiceConnection !== undefined) return voiceConnection.disconnect();
+        }
+
+        new Promise((resolve, reject) => {
+            const voiceConnection = this.client.voiceConnections.find(val => val.channel.guild.id == message.guild.id);
+            
+            if (voiceConnection === undefined) {
+                // Check if the user is in a voice channel.
+                if (message.member.voiceChannel && message.member.voiceChannel.joinable) {
+                    message.member.voiceChannel.join()
                     .then(connection => {
-                        this.connectedTo = connection;
                         resolve(connection);
                     })
                     .catch((error) => {
-                        console.error(error);
-                        reject();
+                        console.log(error);
                     });
+                } else if (!message.member.voiceChannel.joinable) {
+                    message.channel.send("I can't join in this Voice Channel.");
+                    reject();
                 } else {
-                    resolve(this.connectedTo);
+                    // Otherwise, clear the queue and do nothing.
+                    queue.splice(0, queue.length);
+                    reject();
                 }
-                /*if(this.currentVoiceChannel != this.list[0].voiceChannel) {
-                    //this.currentVoiceChannel.leave();
-                    console.log("#voice channel diferente");
-                    this.currentVoiceChannel = this.list[0].voiceChannel;
-                    this.connectedTo = currentVoiceChannel.join();
-                }*/
-            })
-            .then(connection => {
-                console.log("Playing ");
-                var stream = streamifier.createReadStream(this.list[0].sound.buffer);
-                var audio = connection.playStream(stream);
-                //var audio = connected.playFile(path.join(soundFolder, "carlosalberto" ,"chaos.opus"));
+            } else {
+                resolve(voiceConnection);
+            }
+        })
+        .then(connection => {
+            const currentSound = queue[0];
+            console.log("Playing " + currentSound.name);
+            var stream = streamifier.createReadStream(currentSound.sound.buffer);
+            var audio = connection.playStream(stream);
 
-                audio.on("end", end =>{
-                    setTimeout(()=> {   //Delay
-                        
-                        if(this.list.length > 0) {
-                            this.remove();
-                            this.play();
-                        } else {
-                            this.playing = false;               
-                            this.currentVoiceChannel.leave();
-                        }
-                    }, 1000);
-                });
-            }).catch(console.error);
-        }
+            connection.on('error', (error) => {
+                console.log("Error on execute sound " + currentSound.name + "by user " + currentSound.getUser().name);
+            });
+
+            audio.on("end", end =>{
+                setTimeout(()=> {   //Delay
+                    if(queue.length > 0) {
+                        this.remove(message);
+                        this.play(message, queue);
+                    }
+                }, 1000);
+            });
+        }).catch(console.error);
     }
-    
 };
 
 class SoundCollection {
@@ -159,7 +180,7 @@ class Sound {
 };
 
 //
-const queue = new Queue(config.maxQueue);
+const queue = new Queue(bot, config.maxQueue);
 
 //Main
 audioFolders.forEach(element => {
@@ -197,7 +218,7 @@ bot.on('message', (message) =>{
             if(parts[0] == command) {
                 switch(parts.length) {
                     case 1: {
-                        queue.add(message.user, c.random(), voiceChannel);
+                        queue.add(message, c.random());
                         /*voiceChannel.join()
                             .then(connection =>{
                                 console.log("Conectou ");
