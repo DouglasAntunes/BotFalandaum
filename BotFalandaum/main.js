@@ -1,23 +1,42 @@
 /*
  * To do list
  * 1 - Classe dos sons
- * 2 - Arrumar bug da stream
- * 3 - Sistema de Fila 
+ * 2 - Sistema de Fila 
  */
 
 // biblioteca
 const Discord = require("discord.js");
-// file system
-const fs = require('fs');
 // constante do bot
 const bot = new Discord.Client();
+const config = require("./config.json");
 // prefixo
-const prefix = "!";
+const prefix = config.prefix;
 //lib de conversão buffer para readable stream
 var streamifier = require('streamifier');
+const path = require('path');
+//Class
+
+require("./sound.js");
+require("./soundcollection.js");
+require("./queue.js");
+require("./play.js");
+const fs = require('fs');
+const sC = new Array();
+
+const soundFolder = path.join(__dirname, "/audios_opus/");
+const dirTree = require('directory-tree');
+const tree = dirTree(soundFolder);
+
+const audioFolders = [getDirectories(soundFolder)];
+audioFolders.forEach(element => {
+    var normalizedPath = path.dirname(element.toString());
+    console.log(teste2);
+});
 
 //buffer do audio
-var audio_buffer = fs.readFileSync(__dirname + "/audios_opus/darksouls/good.opus");
+var audio_buffer = fs.readFileSync(path.join(__dirname,"/audios_opus/darksouls/good.opus"));
+
+console.log(__dirname);
 
 bot.on("ready",function(){
     console.log("Prontinho mestre >////<");
@@ -121,7 +140,7 @@ bot.on('message', (message) =>{
        
     }
 });
-bot.on('message', (message) =>{
+bot.on('message', (message) => {
     if(message.content == "!kill"){
         message.member.voiceChannel.leave();
     }
@@ -136,4 +155,4 @@ bot.on('message', (message) => {
     }
 });
 
-bot.login("TOKEN");
+bot.login(config.token);
