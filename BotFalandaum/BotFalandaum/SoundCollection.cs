@@ -45,8 +45,7 @@ namespace BotFalandaum
 
         private int RandomRange(int min, int max)
         {
-            long time = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-            Random rand = new Random();
+            Random rand = new Random(DateTime.UtcNow.Millisecond);
             return rand.Next(max - min) + min;
         }
     }
