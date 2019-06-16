@@ -158,7 +158,7 @@ namespace BotFalandaum
 
         private async Task SendAsync(IAudioClient client, byte[] output)
         {
-            using (var discord = client.CreatePCMStream(AudioApplication.Mixed))
+            using (var discord = client.CreateOpusStream())
             using (MemoryStream ms = new MemoryStream(output))
             {
                 try
