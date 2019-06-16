@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 
 namespace BotFalandaum
 {
@@ -10,7 +9,7 @@ namespace BotFalandaum
         string name;
         int weight;
         int partDelay;
-        Stream buffer;
+        byte[] buffer;
 
         //igual ao createSound()
         public Sound(string name, int weight, int partDelay)
@@ -23,16 +22,17 @@ namespace BotFalandaum
         public string Name { get => name; set => name = value; }
         public int Weight { get => weight; set => weight = value; }
         public int PartDelay { get => partDelay; set => partDelay = value; }
-        public Stream Buffer { get => buffer; set => buffer = value; }
+        //public Stream Buffer { get => buffer; set => buffer = value; }
 
-        //public byte[] Buffer { get => buffer; set => buffer = value; }
+        public byte[] Buffer { get => buffer; set => buffer = value; }
 
 
         public void Load(SoundCollection c)
         {
             Console.WriteLine("Carregando " + name);
             //string path = "audios/" + c.Prefix + "/" + name + ".dca";
-            string path = "audios/" + c.Prefix + "/" + name + ".mp3";
+            string path = Program.ProgramPath + "\\audios\\" + c.Prefix + "\\" + name + ".mp3";
+            Console.WriteLine(path);
             //byte[] bytes = File.ReadAllBytes(path);
             //buffer = File.ReadAllBytes(path);
             /*buffer = new byte[0];
@@ -55,9 +55,11 @@ namespace BotFalandaum
                 }
             }*/
             using (var ffmpeg = CreateStream(path))
-            using(var output = ffmpeg.StandardOutput.BaseStream)
+            //using(var output = ffmpeg.StandardOutput.BaseStream)
             {
-                Buffer = output;
+                //Buffer = output;
+                Buffer = ReadFully(ffmpeg.StandardOutput.BaseStream);
+                //output.CopyToAsync(Buffer);
             }
             Console.WriteLine($"Concluido {name}");
         }
@@ -80,7 +82,7 @@ namespace BotFalandaum
             return rv;
         }*/
 
-        private Process CreateStream(string path)
+        public static Process CreateStream(string path)
         {
             return Process.Start(new ProcessStartInfo
             {
@@ -90,7 +92,7 @@ namespace BotFalandaum
                 RedirectStandardOutput = true,
             });
         }
-        /*
+        
         //From https://stackoverflow.com/questions/221925/creating-a-byte-array-from-a-stream
         public static byte[] ReadFully(Stream input)
         {
@@ -99,7 +101,7 @@ namespace BotFalandaum
                 input.CopyTo(ms);
                 return ms.ToArray();
             }
-        }*/
+        }
 
     }
 }

@@ -18,6 +18,8 @@ namespace BotFalandaum
         static string BotOwnerDefault;
         static string BotTokenDefault;
 
+        public static string ProgramPath;
+
         //
         private DiscordSocketClient _client;
         private static SoundCollection c;
@@ -26,9 +28,10 @@ namespace BotFalandaum
 
         static void Main(string[] args)
         {
+
             //Configuration File
             ReadAllConfigs();
-            
+            ProgramPath = Environment.CurrentDirectory;
             //Sound Load Test Sequence
             Sound[] sounds = {
                 new Sound("default", 1000, 250),
@@ -42,7 +45,7 @@ namespace BotFalandaum
             c = new SoundCollection("airhorn", commands, sounds);
             c.Load();
 
-            Console.ReadKey();
+            //Console.ReadKey();
 
             new Program().MainAsync().GetAwaiter().GetResult();
 
@@ -129,14 +132,14 @@ namespace BotFalandaum
             return _audioClient;
         }
 
-        private async Task SendAsync(IAudioClient client, Stream output)
+        private async Task SendAsync(IAudioClient client, byte[] output)
         {
-            using (var discord = client.CreateDirectPCMStream(AudioApplication.Mixed))
-            //using (MemoryStream ms = new MemoryStream(output))
+            using (var discord = client.CreatePCMStream(AudioApplication.Mixed))
+            using (MemoryStream ms = new MemoryStream(output))
             {
                 try
                 {
-                    await discord.CopyToAsync(output);
+                    await ms.CopyToAsync(discord);
                 }
                 finally
                 {
@@ -149,6 +152,13 @@ namespace BotFalandaum
         {
             var ac = await GetAudioClient();
             await SendAsync(ac, c.Sounds[0].Buffer);
+            /*using (var ffmpeg = Sound.CreateStream("C:\\Users\\Douglas\\Source\\Repos\\BotFalandaum\\BotFalandaum\\BotFalandaum\\audios\\airhorn\\default.mp3"))
+            using (var output = ffmpeg.StandardOutput.BaseStream)
+            using (var discord = ac.CreatePCMStream(AudioApplication.Mixed))
+            {
+                try { await output.CopyToAsync(discord); }
+                finally { await discord.FlushAsync(); }
+            }*/
             ac.Dispose();
         }
     }
