@@ -25,7 +25,7 @@ namespace BotFalandaum
         public void Load(SoundCollection c)
         {
             Console.WriteLine("Carregando " + name);
-            string path = ".\\audios\\" + c.Prefix + "\\" + name + ".mp3";
+            string path = $".\\audios\\{c.Prefix}\\{name}.mp3";
             using (var ffmpeg = CreateStream(path))
             {
                 Buffer = ReadFully(ffmpeg.StandardOutput.BaseStream);

@@ -149,7 +149,7 @@ namespace BotFalandaum
 
         private async Task<IAudioClient> GetAudioClient()
         {
-            if(_audioClient == null)
+            if(_audioClient == null || _audioClient.ConnectionState != ConnectionState.Connected)
             {
                 _audioClient = await VoiceChannel.ConnectAsync();
             }
