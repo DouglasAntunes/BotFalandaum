@@ -4,33 +4,28 @@ namespace BotFalandaum
 {
     class SoundCollection
     {
-        string prefix;
-        string[] commands;
-        Sound[] sounds;
-        int soundRange;
+        public string Prefix { get; set; }
+        public string[] Commands { get; set; }
+        public Sound[] Sounds { get; set; }
+        public int SoundRange { get; set; }
 
         public SoundCollection(string prefix, string[] commands)
         {
-            this.prefix = prefix;
-            this.commands = commands;
+            this.Prefix = prefix;
+            this.Commands = commands;
         }
 
         public SoundCollection(string prefix, string[] commands, Sound[] sounds)
             : this(prefix, commands)
         {
-            this.sounds = sounds;
+            this.Sounds = sounds;
         }
-
-        public string Prefix { get => prefix; set => prefix = value; }
-        public string[] Commands { get => commands; set => commands = value; }
-        public Sound[] Sounds { get => sounds; set => sounds = value; }
-        public int SoundRange { get => soundRange; set => soundRange = value; }
-
+        
         public void Load()
         {
-            foreach (Sound s in sounds)
+            foreach (Sound s in Sounds)
             {
-                soundRange += s.Weight;
+                SoundRange += s.Weight;
                 s.Load(this);
             }
 
@@ -39,9 +34,9 @@ namespace BotFalandaum
         public Sound Random()
         {
             int j = 0;
-            int number = RandomRange(0, soundRange);
+            int number = RandomRange(0, SoundRange);
 
-            foreach (Sound s in sounds)
+            foreach (Sound s in Sounds)
             {
                 j += s.Weight;
 

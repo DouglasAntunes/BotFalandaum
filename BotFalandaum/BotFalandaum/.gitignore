@@ -1,1 +1,8 @@
 /App.config
+/opusenc.exe
+/audios_mp3/*
+/audios_wav/*
+/audios_opus/*
+!/audios_mp3/airhorn/
+!/audios_wav/airhorn/
+!/audios_opus/airhorn/

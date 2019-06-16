@@ -1,28 +1,27 @@
 ﻿using Discord;
 using Discord.WebSocket;
-using Discord.Audio;
 using System;
 using System.Threading.Tasks;
 using System.Configuration;
 using System.IO;
+using System.Collections.Generic;
 
 namespace BotFalandaum
 {
     class Program
     {
-        string botVersion = "0.1";
-        int MaxQueueSize = 20;
-        //List<Play> = new List<Play>();
-        string Owner;
+        public static string botVersion = "0.1";
+        private static int MaxQueueSize = 20;
 
-        static string BotOwnerDefault;
-        static string BotTokenDefault;
+        private static Queue queue;
+        private static List<SoundCollection> soundCollection;
+
+        private static string BotOwnerDefault;
+        private static string BotTokenDefault;
 
         //
         private DiscordSocketClient _client;
-        private static SoundCollection c;
-        private IAudioClient _audioClient;
-        public IVoiceChannel VoiceChannel { get; private set; }
+        
 
         static void Main(string[] args)
         {
@@ -30,18 +29,35 @@ namespace BotFalandaum
             //Configuration File
             ReadAllConfigs();
 
-            //Sound Load Test Sequence
-            Sound[] sounds = {
-                new Sound("default", 1000),
-                //new Sound("clownshort", 800)
-            };
+            //Initialize queue
+            queue = new Queue(MaxQueueSize);
 
-            string[] commands = {
-                "!airhorn"
-            };
+            //Load Audios
+            soundCollection = new List<SoundCollection>();
 
-            c = new SoundCollection("airhorn", commands, sounds);
-            c.Load();
+            String[] audioFolders  = Directory.GetDirectories($".\\{Sound.audioFolderName}\\");
+            foreach (String path in audioFolders)
+            {
+                DirectoryInfo dirInfo = new DirectoryInfo(path);
+                String folderName = dirInfo.Name;
+
+                String[] audioNamesWithPath = Directory.GetFiles(path, $"*.{Sound.extension}");
+
+                List<string> commands = new List<string>();
+                commands.Add($"!{folderName.ToLower()}");
+
+                List<Sound> sounds = new List<Sound>();
+                foreach(String soundFile in audioNamesWithPath)
+                {
+                    String audioName = Path.GetFileNameWithoutExtension(soundFile);
+                    sounds.Add(new Sound(audioName.ToLower(), 1));
+                }
+
+                SoundCollection sC = new SoundCollection(folderName.ToLower(), commands.ToArray(), sounds.ToArray());
+                dirInfo = null;
+                sC.Load();
+                soundCollection.Add(sC);
+            }
 
             //Console.ReadKey();
 
@@ -89,38 +105,94 @@ namespace BotFalandaum
         private async Task MessageReceived(SocketMessage message)
         {
             string[] parts = message.Content.Split(" ");
-            
-            switch(parts.Length)
+
+            foreach (SoundCollection c in soundCollection)
             {
-                //somente comando
-                case 1:
+                foreach (string command in c.Commands)
                 {
-                    foreach (string command in c.Commands)
+                    if (parts[0] == command)
                     {
-                        if (message.Content == command)
+                        switch (parts.Length)
                         {
-                            JoinChannel(message).Start();
+                            //1 part (like !command)
+                            case 1:
+                            {
+                                queue.Add(c.Random(), message.Author as IGuildUser);
+                                break;
+                            }
+                            //2 parts (like !command audio or !command times)
+                            case 2:
+                            {
+                                int value = 0;
+                                if(int.TryParse(parts[1], out value))
+                                {
+                                    for(int i = 0; i < value; i++)
+                                    {
+                                        queue.Add(c.Random(), message.Author as IGuildUser);
+                                    }
+                                }
+                                else
+                                {
+                                    foreach (Sound s in c.Sounds)
+                                    {
+                                        if (parts[1] == s.Name)
+                                        {
+                                            queue.Add(s, message.Author as IGuildUser);
+                                            break;
+                                        }
+                                    }
+                                }
+                                break;
+                            }
+                            //3 parts (like !command audio times)
+                            case 3:
+                            {
+                                int value2 = 0;
+                                if (int.TryParse(parts[2], out value2))
+                                {
+                                    foreach (Sound s in c.Sounds)
+                                    {
+                                        if (parts[1] == s.Name)
+                                        {
+                                            for (int i = 0; i < value2; i++)
+                                            {
+                                                queue.Add(s, message.Author as IGuildUser);
+                                            }
+                                            break;
+                                        }
+                                    }
+                                }
+                                break;
+                            }
                         }
+                        
+                        queue.Play().Start();
                     }
-
-                    if (message.Content == "!ping")
-                    {
-                        await message.Channel.SendMessageAsync("Pong!");
-                    }
-
-                    break;
-                }
-                //som especifico
-                case 2:
-                {
-                    break;
-                }
-                //repetição
-                case 3:
-                {
-                    break;
                 }
             }
+
+            if (message.Content == "!ping")
+            {
+                await message.Channel.SendMessageAsync("Pong!");
+            }
+
+            if (message.Content == "!comandos")
+            {
+                string commandsAll = "";
+                foreach (SoundCollection c in soundCollection)
+                    foreach (string command in c.Commands)
+                    {
+                        commandsAll += $"{command} ";
+                    }
+                await message.Channel.SendMessageAsync(commandsAll);
+            }
+
+            if (message.Content == "!kill")
+            {
+                queue.killAudio();
+            }
+
+            
             
         }
 
@@ -129,54 +201,6 @@ namespace BotFalandaum
             Console.WriteLine(msg.ToString());
             return Task.CompletedTask;
         }
-        
-        public async Task JoinChannel(SocketMessage msg, IVoiceChannel channel = null)
-        {
-            channel = channel ?? (msg.Author as IGuildUser)?.VoiceChannel;
-            
-            if(channel == null)
-            {
-                //User isnt on a VoiceChannel
-                await msg.Channel.SendMessageAsync("Você não está em um Voice Chat!");
-            }
-            else
-            {
-                VoiceChannel = channel;
-                SendAudio().Start();
-            }
 
-        }
-
-        private async Task<IAudioClient> GetAudioClient()
-        {
-            if(_audioClient == null || _audioClient.ConnectionState != ConnectionState.Connected)
-            {
-                _audioClient = await VoiceChannel.ConnectAsync();
-            }
-            return _audioClient;
-        }
-
-        private async Task SendAsync(IAudioClient client, byte[] output)
-        {
-            using (var discord = client.CreatePCMStream(AudioApplication.Mixed))
-            using (MemoryStream ms = new MemoryStream(output))
-            {
-                try
-                {
-                    await ms.CopyToAsync(discord);
-                }
-                finally
-                {
-                    await discord.FlushAsync();
-                }
-            }
-        }
-
-        private async Task SendAudio()
-        {
-            var ac = await GetAudioClient();
-            await SendAsync(ac, c.Sounds[0].Buffer);
-            ac.Dispose();
-        }
     }
 }
