@@ -19,11 +19,82 @@ const soundFolder = path.join(__dirname, "/audios_opus/");
 const audioFolders = getDirectories(soundFolder);
 //Classes
 class Play {
-
+    constructor(user, sound, voiceChannel) {
+        this.user = user;
+        this.sound = sound;
+        this.voiceChannel = voiceChannel;
+    }
 };
 
 class Queue {
+    constructor(maxQueue) {
+        this.list = new Array();
+        this.maxQueue = maxQueue;
+        this.playing = false;
+        this.currentVoiceChannel = null;
+        this.connectedTo = null;
+    }
 
+    add(user, sound, voiceChannel) {
+        this.list.push(new Play(user, sound, voiceChannel));
+        if(!this.playing) {
+            this.play();
+        }
+    }
+
+    remove() {
+        this.list.shift();
+    }
+    
+    play() {
+        if(!this.playing && this.list.length > 0){
+            this.playing = true;
+
+            new Promise((resolve, reject) => {
+                //if(this.currentVoiceChannel === null || this.connectedTo === null) {
+                if(currentVoiceChannel != this.list[0].voiceChannel || this.connectedTo === null) {
+                    //currentVoiceChannel = this.list[0].voiceChannel;
+                    currentVoiceChannel.join()
+                    .then(connection => {
+                        this.connectedTo = connection;
+                        resolve(connection);
+                    })
+                    .catch((error) => {
+                        console.error(error);
+                        reject();
+                    });
+                } else {
+                    resolve(this.connectedTo);
+                }
+                /*if(this.currentVoiceChannel != this.list[0].voiceChannel) {
+                    //this.currentVoiceChannel.leave();
+                    console.log("#voice channel diferente");
+                    this.currentVoiceChannel = this.list[0].voiceChannel;
+                    this.connectedTo = currentVoiceChannel.join();
+                }*/
+            })
+            .then(connection => {
+                console.log("Playing ");
+                var stream = streamifier.createReadStream(this.list[0].sound.buffer);
+                var audio = connection.playStream(stream);
+                //var audio = connected.playFile(path.join(soundFolder, "carlosalberto" ,"chaos.opus"));
+
+                audio.on("end", end =>{
+                    setTimeout(()=> {   //Delay
+                        
+                        if(this.list.length > 0) {
+                            this.remove();
+                            this.play();
+                        } else {
+                            this.playing = false;               
+                            this.currentVoiceChannel.leave();
+                        }
+                    }, 1000);
+                });
+            }).catch(console.error);
+        }
+    }
+    
 };
 
 class SoundCollection {
@@ -92,6 +163,9 @@ class Sound {
 };
 
 //
+const queue = new Queue(config.maxQueue);
+
+//Main
 audioFolders.forEach(element => {
     var folderName = path.basename(element);
     //console.log(folderName);
@@ -127,7 +201,8 @@ bot.on('message', (message) =>{
             if(parts[0] == command) {
                 switch(parts.length) {
                     case 1: {
-                        voiceChannel.join()
+                        queue.add(message.user, c.random(), voiceChannel);
+                        /*voiceChannel.join()
                             .then(connection =>{
                                 console.log("Conectou ");
                                 var stream = streamifier.createReadStream(c.random().buffer);
@@ -140,7 +215,7 @@ bot.on('message', (message) =>{
                                     console.log("Saiu");
                                 })
                             })
-                        .catch(console.error);
+                        .catch(console.error);*/
                     }
                     case 2: {
                         if(isNaN(parts[1])) {
@@ -169,23 +244,6 @@ bot.on('message', (message) =>{
             }
         });
     });
-
-    if (message.content == "!teste") {
-        voiceChannel.join()
-            .then(connection =>{
-                console.log("Conectou ");
-                var stream = streamifier.createReadStream(audio_buffer);
-                var audio = connection.playStream(stream);
-                audio.on("start", ()=>{
-                    console.log("Tocou");
-                })
-                audio.on("end", end =>{
-                    voiceChannel.leave();
-                    console.log("Saiu");
-                })
-            })
-        .catch(console.error);
-    }
 });
 
 bot.on('message', (message) =>{
@@ -202,6 +260,21 @@ bot.on('message', (message) =>{
                 audio.on("end", end =>{
                     voiceChannel.leave();
                     console.log("Saiu");
+                })
+            })
+        .catch(console.error);
+    }
+    if(message.content == "!kill"){
+        voiceChannel.leave();
+    }
+    if (message.content == "!teste2") {
+        voiceChannel.join()
+            .then(connection => {
+                var buffer = fs.readFileSync(path.join(soundFolder, "carlosalberto" ,"chaos.opus"));
+                var stream = streamifier.createReadStream(buffer);
+                const som = connection.playStream(stream);
+                som.on("end", end =>{
+                    voiceChannel.leave();
                 })
             })
         .catch(console.error);
@@ -280,22 +353,15 @@ bot.on('message', (message) =>{
     }
 
 });*/
-bot.on('message', (message) =>{
-    if (message.content == "!buf") {
-       
-    }
-});
-bot.on('message', (message) => {
-    if(message.content == "!kill"){
-        message.member.voiceChannel.leave();
-    }
-});
-
 bot.on('message', (message) => {
     var arr = message.content.toLowerCase().split(" ");
+
     for (let i = 0; i < arr.length; i++) {
         if (arr[i] == "link") {
-            message.reply("Aqui está http://www.smashbros.com/images/og/link.jpg");
+            var rand = SoundCollection.randomRange(0, 5);
+            if (rand => 2 && rand <= 3) {
+                message.reply("Aqui está http://www.smashbros.com/images/og/link.jpg");
+            }
         }
     }
 });
