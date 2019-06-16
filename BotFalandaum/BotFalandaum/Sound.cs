@@ -1,4 +1,6 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
+using System.Linq;
 
 namespace BotFalandaum
 {
@@ -24,22 +26,25 @@ namespace BotFalandaum
 
         public void Load(SoundCollection c)
         {
+            Console.WriteLine("Carregando " + name);
             string path = "audios/" + c.Prefix + "/" + name + ".dca";
             //byte[] bytes = File.ReadAllBytes(path);
-            buffer = File.ReadAllBytes(path);
-            /*using (FileStream fs = new FileStream(path, FileMode.Open, FileAccess.Read))
+            //buffer = File.ReadAllBytes(path);
+            buffer = new byte[0];
+            using (FileStream fs = new FileStream(path, FileMode.Open, FileAccess.Read))
+            using(BinaryReader b = new BinaryReader(fs))
             {
-                MemoryStream ms = new MemoryStream(bytes.Length);
-                BinaryReader b = new BinaryReader(fs);
-                byte[] temp = new byte[bytes.Length];
-                while (fs.Read(temp, 0, sizeof(Int16)) > 0)
-                {
-                    ms.Write(temp, 0, bytes.Length);
+                while (b.BaseStream.Position != b.BaseStream.Length) {
+                    ushort opusLenght = b.ReadUInt16();
+
+                    byte[] buff;
+
+                    buff = b.ReadBytes(opusLenght);
+
+                    buffer = Combine(buffer, buff);
                 }
-                temp = null;
-                buffer = ms.ToArray();
             }
-            bytes = null;*/
+            Console.WriteLine($"Concluido {name} {buffer.Length}");
         }
 
         public void Play()
@@ -47,6 +52,18 @@ namespace BotFalandaum
 
         }
 
+        //From: https://stackoverflow.com/questions/415291/best-way-to-combine-two-or-more-byte-arrays-in-c-sharp
+        private byte[] Combine(params byte[][] arrays)
+        {
+            byte[] rv = new byte[arrays.Sum(a => a.Length)];
+            int offset = 0;
+            foreach (byte[] array in arrays)
+            {
+                System.Buffer.BlockCopy(array, 0, rv, offset, array.Length);
+                offset += array.Length;
+            }
+            return rv;
+        }
 
     }
 }

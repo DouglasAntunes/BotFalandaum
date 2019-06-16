@@ -4,7 +4,6 @@ using Discord.Audio;
 using System;
 using System.Threading.Tasks;
 using System.Configuration;
-using System.IO;
 
 namespace BotFalandaum
 {
@@ -42,7 +41,7 @@ namespace BotFalandaum
             c = new SoundCollection("airhorn", commands, sounds);
             c.Load();
 
-            //Console.ReadKey();
+            Console.ReadKey();
 
             new Program().MainAsync().GetAwaiter().GetResult();
 
@@ -131,12 +130,9 @@ namespace BotFalandaum
 
         private async Task SendAsync(IAudioClient client, byte[] output)
         {
-            var discord = client.CreateOpusStream();
+            var discord = client.CreateDirectOpusStream();
             try {
-                for(int i = 2; i < output.Length; i++)
-                {
-                    discord.WriteByte(output[i]);
-                }
+                await discord.WriteAsync(output, 0, output.Length);
             }
             finally {
                 await discord.FlushAsync();
@@ -147,6 +143,7 @@ namespace BotFalandaum
         {
             var ac = await GetAudioClient();
             await SendAsync(ac, c.Sounds[0].Buffer);
+            ac.Dispose();
         }
     }
 }
