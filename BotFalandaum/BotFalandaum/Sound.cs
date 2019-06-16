@@ -24,7 +24,7 @@ namespace BotFalandaum
 
         public void Load(SoundCollection c)
         {
-            string path = "audio/" + c.Prefix + "/" + name + ".dca";
+            string path = "audios/" + c.Prefix + "/" + name + ".dca";
             //byte[] bytes = File.ReadAllBytes(path);
             buffer = File.ReadAllBytes(path);
             /*using (FileStream fs = new FileStream(path, FileMode.Open, FileAccess.Read))

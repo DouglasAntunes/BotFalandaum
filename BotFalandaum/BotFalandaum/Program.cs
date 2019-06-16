@@ -1,7 +1,10 @@
 ﻿using Discord;
 using Discord.WebSocket;
+using Discord.Audio;
 using System;
 using System.Threading.Tasks;
+using System.Configuration;
+using System.IO;
 
 namespace BotFalandaum
 {
@@ -12,15 +15,19 @@ namespace BotFalandaum
         //List<Play> = new List<Play>();
         string Owner;
 
-        string BotOwnerDefault = "";
-        string BotTokenDefault = "";
+        static string BotOwnerDefault;
+        static string BotTokenDefault;
 
         //
-        private DiscordSocketClient _client;
+        private DiscordShardedClient _client;
+        private static SoundCollection c;
 
 
         static void Main(string[] args)
         {
+            //Configuration File
+            ReadAllConfigs();
+            
             //Sound Load Test Sequence
             Sound[] sounds = {
                 new Sound("default", 1000, 250),
@@ -31,7 +38,7 @@ namespace BotFalandaum
                 "!airhorn"
             };
 
-            SoundCollection c = new SoundCollection("airhorn", commands, sounds);
+            c = new SoundCollection("airhorn", commands, sounds);
             c.Load();
 
             Console.ReadKey();
@@ -41,10 +48,32 @@ namespace BotFalandaum
             Console.ReadKey();
         }
 
+        private static void ReadAllConfigs()
+        {
+            try
+            {
+                var appSettings = ConfigurationManager.AppSettings;
+                if (appSettings.Count == 0)
+                {
+                    Console.WriteLine("AppSettings is empty.");
+                }
+                else
+                {
+                    BotOwnerDefault = appSettings["Owner"];
+                    BotTokenDefault = appSettings["Token"];
+                }
+            }
+            catch (ConfigurationErrorsException)
+            {
+                Console.WriteLine("Error reading app settings");
+                System.Environment.Exit(1);
+            }
+        }
+
         public async Task MainAsync()
         {
-            _client = new DiscordSocketClient();
-
+            _client = new DiscordShardedClient();
+            
             _client.Log += Log;
             _client.MessageReceived += MessageReceived;
 
@@ -61,6 +90,10 @@ namespace BotFalandaum
             {
                 await message.Channel.SendMessageAsync("Pong!");
             }
+            if(message.Content == "!test")
+            {
+                await JoinChannel(message);
+            }
         }
 
         private Task Log(LogMessage msg)
@@ -68,21 +101,38 @@ namespace BotFalandaum
             Console.WriteLine(msg.ToString());
             return Task.CompletedTask;
         }
-
-        public async Task JoinChannel(IVoiceChannel channel = null)
+        
+        public async Task JoinChannel(SocketMessage msg, IVoiceChannel channel = null)
         {
             channel = channel ?? (msg.Author as IGuildUser)?.VoiceChannel;
             if(channel == null)
             {
-                await msg.Channel.S
+
             }
+            Console.WriteLine("caraioo");
             var audioClient = await channel.ConnectAsync();
+            Console.WriteLine("caraioo 2");
+
+
+            using (Stream stream = new MemoryStream(c.Sounds[0].Buffer))
+            {
+                await SendAsync(audioClient, stream).ConfigureAwait(false); 
+            }
+                
         }
 
-        /*private async Task SendAsync(IAudioClient client, Sound[] s)
+        private async Task SendAsync(IAudioClient client, Stream output)
         {
-            var discord = 
-            //await discord.
-        }*/
+            Console.WriteLine(output.Length);
+            using (var discord = client.CreateOpusStream())
+            {
+                try {
+                    await output.CopyToAsync(discord);
+                }
+                finally {
+                    await discord.FlushAsync();
+                }
+            }
+        }
     }
 }
