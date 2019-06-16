@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Text;
+﻿using System.IO;
 
 namespace BotFalandaum
 {
@@ -15,9 +12,9 @@ namespace BotFalandaum
         //igual ao createSound()
         public Sound(string name, int weight, int partDelay)
         {
-            this.Name = name;
-            this.Weight = weight;
-            this.PartDelay = partDelay;
+            this.name = name;
+            this.weight = weight;
+            this.partDelay = partDelay;
         }
 
         public string Name { get => name; set => name = value; }
@@ -25,20 +22,31 @@ namespace BotFalandaum
         public int PartDelay { get => partDelay; set => partDelay = value; }
         public byte[] Buffer { get => buffer; set => buffer = value; }
 
-        public void Load()
+        public void Load(SoundCollection c)
         {
-            byte[] bytes = File.ReadAllBytes(null);
-            using (FileStream fs = new FileStream(null, FileMode.Open, FileAccess.Read))
+            string path = "audio/" + c.Prefix + "/" + name + ".dca";
+            //byte[] bytes = File.ReadAllBytes(path);
+            buffer = File.ReadAllBytes(path);
+            /*using (FileStream fs = new FileStream(path, FileMode.Open, FileAccess.Read))
             {
-
                 MemoryStream ms = new MemoryStream(bytes.Length);
                 BinaryReader b = new BinaryReader(fs);
-
-                while (fs.Read(null, 0, sizeof(Int16)) > 0)
+                byte[] temp = new byte[bytes.Length];
+                while (fs.Read(temp, 0, sizeof(Int16)) > 0)
                 {
-                    ms.Write(Buffer, 0, bytes.Length);
+                    ms.Write(temp, 0, bytes.Length);
                 }
+                temp = null;
+                buffer = ms.ToArray();
             }
+            bytes = null;*/
         }
+
+        public void Play()
+        {
+
+        }
+
+
     }
 }

@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace BotFalandaum
 {
@@ -11,6 +9,18 @@ namespace BotFalandaum
         Sound[] sounds;
         int soundRange;
 
+        public SoundCollection(string prefix, string[] commands)
+        {
+            this.prefix = prefix;
+            this.commands = commands;
+        }
+
+        public SoundCollection(string prefix, string[] commands, Sound[] sounds)
+            : this(prefix, commands)
+        {
+            this.sounds = sounds;
+        }
+
         public string Prefix { get => prefix; set => prefix = value; }
         public string[] Commands { get => commands; set => commands = value; }
         public Sound[] Sounds { get => sounds; set => sounds = value; }
@@ -18,10 +28,10 @@ namespace BotFalandaum
 
         public void Load()
         {
-            foreach (Sound s in Sounds)
+            foreach (Sound s in sounds)
             {
-                this.SoundRange += s.Weight;
-                s.Load();
+                soundRange += s.Weight;
+                s.Load(this);
             }
 
         }
@@ -43,10 +53,12 @@ namespace BotFalandaum
             return null;
         }
 
-        private int RandomRange(int min, int max)
+        public static int RandomRange(int min, int max)
         {
             Random rand = new Random(DateTime.UtcNow.Millisecond);
             return rand.Next(max - min) + min;
         }
+
+
     }
 }
