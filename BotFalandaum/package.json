@@ -1,5 +1,5 @@
 {
-  "name": "bot-test",
+  "name": "BotFalandaum",
   "version": "1.0.0",
   "description": "",
   "main": "main.js",
@@ -10,7 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "bufferutil": "^3.0.3",
-    "discord.js": "^11.2.1",
+    "discord.js": "^11.3.0",
     "ffmpeg-stream": "^0.5.0",
     "opusscript": "0.0.6",
     "streamifier": "^0.1.1"

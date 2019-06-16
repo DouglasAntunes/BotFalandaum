@@ -5,7 +5,7 @@
  * 3 - Sistema de Fila 
  */
 
-// biblioteda
+// biblioteca
 const Discord = require("discord.js");
 // file system
 const fs = require('fs');
@@ -15,11 +15,9 @@ const bot = new Discord.Client();
 const prefix = "!";
 //lib de conversão buffer para readable stream
 var streamifier = require('streamifier');
-// pasta de audio
-const audios = "C:/Users/JULIO/Desktop/bot-test/audios/";
 
 //buffer do audio
-var audio_buffer = fs.readFileSync("./audios/darksouls/good.opus");
+var audio_buffer = fs.readFileSync(__dirname + "/audios_opus/darksouls/good.opus");
 
 bot.on("ready",function(){
     console.log("Prontinho mestre >////<");
@@ -138,4 +136,4 @@ bot.on('message', (message) => {
     }
 });
 
-bot.login("Mzk5MjQ1MTM4MjU5NDc2NDgx.DTKS6A.jG-H-l2fDTAIZSYtRqMw-Xig-c4");
+bot.login("TOKEN");
