@@ -1,0 +1,5 @@
+{
+    "name": "BotFalandaum Dev",
+    "script": "main.js",
+    "watch": true
+}

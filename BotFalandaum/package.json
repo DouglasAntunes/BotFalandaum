@@ -13,6 +13,7 @@
     "discord.js": "^11.3.0",
     "ffmpeg-stream": "^0.5.0",
     "opusscript": "0.0.6",
+    "pm2": "^2.10.2",
     "streamifier": "^0.1.1"
   }
 }

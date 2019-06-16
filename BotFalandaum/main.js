@@ -1,7 +1,3 @@
-/*
- * To do list
- * 1 - Sistema de Fila 
- */
 const fs = require('fs');
 const { lstatSync, readdirSync } = require('fs');
 const { join } = require('path');
@@ -267,6 +263,7 @@ bot.on('message', (message) =>{
     if(message.content == "!kill"){
         voiceChannel.leave();
     }
+
     if (message.content == "!teste2") {
         voiceChannel.join()
             .then(connection => {
@@ -279,11 +276,14 @@ bot.on('message', (message) =>{
             })
         .catch(console.error);
     }
-});
-//pergunta
-/*bot.on('message', (message) =>{
-    
-    if(message.content[0] == prefix && message.content[message.content.length - 1] == "?"){
+
+    //pergunta
+    /*
+        - quando mais pessoas fazem o comando ele "para"
+        - precisa de fila
+        - não apaga as mensagens
+    */
+    /*if(message.content[0] == prefix && message.content[message.content.length - 1] == "?"){
         var resp = Math.floor(Math.random() * 3);
         if(resp == 0){
             message.channel.sendMessage("Sim >//<");
@@ -292,13 +292,9 @@ bot.on('message', (message) =>{
         }else{
             message.channel.sendMessage("Talvez -w-");
         }
-    }
-});
-// quando mais pessoas fazem o comando ele "para"
-// precisa de fila
-//não apaga as mensagens
-bot.on('message', (message) =>{
-    var voiceChannel = message.member.voiceChannel;
+    }*/
+
+    /*
     if (message.content == "!black") {
         voiceChannel.join()
             .then(connection => {
@@ -310,24 +306,7 @@ bot.on('message', (message) =>{
         .catch(console.error);
     }
 
-});
-
-bot.on('message', (message) =>{
-    var voiceChannel = message.member.voiceChannel;
-    if (message.content == "!zoom") {
-        voiceChannel.join()
-            .then(connection => {
-                
-                
-                
-            })
-        .catch(console.error);
-    }
-
-});
-bot.on('message', (message) =>{
-    var voiceChannel = message.member.voiceChannel;
-    if (message.content == "!la") {
+     if (message.content == "!la") {
         voiceChannel.join()
             .then(connection => {
                 const som = connection.playFile(audios+"la.mp3");
@@ -338,9 +317,6 @@ bot.on('message', (message) =>{
         .catch(console.error);
     }
 
-});
-bot.on('message', (message) =>{
-    var voiceChannel = message.member.voiceChannel;
     if (message.content == "!max") {
         voiceChannel.join()
             .then(connection => {
@@ -352,10 +328,10 @@ bot.on('message', (message) =>{
         .catch(console.error);
     }
 
-});*/
-bot.on('message', (message) => {
-    var arr = message.content.toLowerCase().split(" ");
+    */
 
+    //Random Link Img
+    var arr = message.content.toLowerCase().split(" ");
     for (let i = 0; i < arr.length; i++) {
         if (arr[i] == "link") {
             var rand = SoundCollection.randomRange(0, 5);
@@ -364,7 +340,10 @@ bot.on('message', (message) => {
             }
         }
     }
+
+    //
 });
+
 /*  //Memory Usage
 const used = process.memoryUsage();
 for (let key in used) {
