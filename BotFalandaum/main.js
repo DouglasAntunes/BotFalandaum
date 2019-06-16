@@ -31,7 +31,7 @@ class SoundCollection {
     }
 
     //From https://developer.mozilla.org/pt-BR/docs/Web/JavaScript/Reference/Global_Objects/Math/random
-    randomRange(min, max) {
+    static randomRange(min, max) {
         min = Math.ceil(min);
         max = Math.floor(max);
         return Math.floor(Math.random() * (max - min)) + min;
@@ -39,7 +39,7 @@ class SoundCollection {
 
     random() {
         var j = 0;
-        var number = this.randomRange(0, this.soundRange);
+        var number = SoundCollection.randomRange(0, this.soundRange);
 
         for(var i = 0; i < this.sounds.length; i++) {
             j += this.sounds[i].weight;
@@ -49,7 +49,7 @@ class SoundCollection {
         }
     }
 
-    getSoundWithName(name) {
+    SoundWithName(name) {
         var sound = null;
         for(var i = 0; i < this.sounds.length; i++) {
             if(this.sounds[i].name == name) {
@@ -86,55 +86,53 @@ class Play {
         this.sound = sound;
     }
 
-    getUser() {
+    get User() {
         return this.message.author.username;
     }
 
-    getUserId() {
-        this.getUser().id;
+    get UserId() {
+        this.message.author.id;
     }
 };
 
 class Queue {
     constructor(client, maxQueue) {
         this.maxQueue = maxQueue;
-        this.queues = {};    //queue[serverid]{}
+        this.queues = new Array();    //queue[serverid]{}
         this.client = client;
     }
 
-    getQueue(serverid) {
+    getServerQueue(serverid) {
         if(!this.queues[serverid]) {
-            this.queues[serverid] = [];
+            this.queues[serverid] = new Array();
         }
         return this.queues[serverid];
     }
 
     add(message, sound) {
-        const queue = this.getQueue(message.guild.id);
+        const queue = this.getServerQueue(message.guild.id);
         if(queue.length >= this.maxQueue)
         {
             return message.channel.send("Queue Full");
         }
-        queue.push(new Play(message, sound));
-        if(queue.length === 1 || !(this.client.VoiceConnections.find(val => val.channel.guild.id == message.guild.id) === undefined)) {
+        queue.push(new Play(message, sound));   //this.client = undefined ?
+        if(queue.length === 1 || !(this.client.VoiceConnections.find(val => val.channel.guild.id === message.guild.id) === undefined)) {
             this.play(message, queue);
         }
     }
 
     remove(message) {
-        const queue = this.getQueue(message.guild.id);
+        const queue = this.getServerQueue(message.guild.id);
         queue.shift();
     }
     
     play(message, queue) {
-        if(queue.length === 0) {
-            var voiceConnection = this.client.voiceConnections.find(val => val.channel.guild.id == message.guild.id);
-            if (voiceConnection !== undefined) return voiceConnection.disconnect();
+        var voiceConnection = this.client.voiceConnections.find(val => val.channel.guild.id === message.guild.id);
+        if(queue.length === 0 && voiceConnection !== undefined) {
+            return voiceConnection.disconnect();
         }
 
         new Promise((resolve, reject) => {
-            var voiceConnection = this.client.voiceConnections.find(val => val.channel.guild.id == message.guild.id);
-            
             if (voiceConnection === undefined) {
                 // Check if the user is in a voice channel.
                 if (message.member.voiceChannel && message.member.voiceChannel.joinable) {
@@ -158,15 +156,15 @@ class Queue {
                 resolve(voiceConnection);
             }
         })
-        .then(connection => {
+        .then((connection) => {
             var currentItem = queue[0];
             var currentSound = currentItem.sound;
             console.log(queue)
-            console.log(`Playing ${currentSound.name} by user ${currentItem.getUser()}`);
+            console.log(`Playing ${currentSound.name} by user ${currentItem.User}`);
             var stream = streamifier.createReadStream(currentSound.buffer);
             var audio = connection.playStream(stream);
             connection.on('error', (error) => {
-                console.log(`Error on execute sound ${currentSound.name} by user ${currentItem.getUser()}`);
+                console.log(`Error on execute sound ${currentSound.name} by user ${currentItem.User}`);
             });
 
             audio.on("end", end =>{
@@ -252,7 +250,7 @@ bot.on('message', (message) =>{
                             voiceChannel.join()
                             .then(connection =>{
                                 console.log("Conectou ");
-                                var stream = streamifier.createReadStream(c.getSoundWithName(parts[1]).buffer);
+                                var stream = streamifier.createReadStream(c.SoundWithName(parts[1]).buffer);
                                 var audio = connection.playStream(stream);
                                 audio.on("start", ()=>{
                                     console.log("Tocou");
@@ -368,15 +366,14 @@ bot.on('message', (message) =>{
 
     //Random Link Img
     var arr = message.content.toLowerCase().split(" ");
-    for (let i = 0; i < arr.length; i++) {
-        if (arr[i] == "link") {
-            var rand = SoundCollection.randomRange(0, 5);
-            if (rand => 2 && rand <= 3) {
-                message.reply("Aqui está http://www.smashbros.com/images/og/link.jpg");
-            }
+    if(arr.includes("link")) {
+        var randomNum = SoundCollection.randomRange(1, 11);
+        console.log(randomNum);
+        if(randomNum > 1 && randomNum < 5) {
+            //Futuramente Substituir por Upload de Imagem, já q a probabilidade é menor e otimizar o upload; Talvez ter mais opções de imagem e randomiza-las também.
+            message.reply("Aqui está http://www.smashbros.com/images/og/link.jpg"); 
         }
     }
-
     //
 });
 
