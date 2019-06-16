@@ -21,15 +21,15 @@ namespace BotFalandaum
             foreach (Sound s in Sounds)
             {
                 this.SoundRange += s.Weight;
-                s.load();
+                s.Load();
             }
 
         }
 
         public Sound Random()
         {
-            int j;
-            int number = randomRange(0, soundRange);
+            int j = 0;
+            int number = RandomRange(0, soundRange);
 
             foreach (Sound s in sounds)
             {
@@ -43,11 +43,11 @@ namespace BotFalandaum
             return null;
         }
 
-        private int randomRange(int min, int max)
+        private int RandomRange(int min, int max)
         {
-            //Criar Seed
-            //Retornar 
-            return 0;
+            long time = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            Random rand = new Random();
+            return rand.Next(max - min) + min;
         }
     }
 }

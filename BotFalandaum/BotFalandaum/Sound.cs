@@ -25,7 +25,7 @@ namespace BotFalandaum
         public int PartDelay { get => partDelay; set => partDelay = value; }
         public byte[] Buffer { get => buffer; set => buffer = value; }
 
-        public void load()
+        public void Load()
         {
             byte[] bytes = File.ReadAllBytes(null);
             using (FileStream fs = new FileStream(null, FileMode.Open, FileAccess.Read))
