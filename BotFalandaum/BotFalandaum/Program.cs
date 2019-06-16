@@ -18,8 +18,6 @@ namespace BotFalandaum
         static string BotOwnerDefault;
         static string BotTokenDefault;
 
-        public static string ProgramPath;
-
         //
         private DiscordSocketClient _client;
         private static SoundCollection c;
@@ -31,11 +29,11 @@ namespace BotFalandaum
 
             //Configuration File
             ReadAllConfigs();
-            ProgramPath = Environment.CurrentDirectory;
+
             //Sound Load Test Sequence
             Sound[] sounds = {
-                new Sound("default", 1000, 250),
-                //new Sound("clownshort", 800, 250)
+                new Sound("default", 1000),
+                //new Sound("clownshort", 800)
             };
 
             string[] commands = {
@@ -70,7 +68,7 @@ namespace BotFalandaum
             catch (ConfigurationErrorsException)
             {
                 Console.WriteLine("Error reading app settings");
-                System.Environment.Exit(1);
+                Environment.Exit(1);
             }
         }
 
@@ -90,14 +88,40 @@ namespace BotFalandaum
 
         private async Task MessageReceived(SocketMessage message)
         {
-            if(message.Content == "!ping")
+            string[] parts = message.Content.Split(" ");
+            
+            switch(parts.Length)
             {
-                await message.Channel.SendMessageAsync("Pong!");
+                //somente comando
+                case 1:
+                {
+                    foreach (string command in c.Commands)
+                    {
+                        if (message.Content == command)
+                        {
+                            JoinChannel(message).Start();
+                        }
+                    }
+
+                    if (message.Content == "!ping")
+                    {
+                        await message.Channel.SendMessageAsync("Pong!");
+                    }
+
+                    break;
+                }
+                //som especifico
+                case 2:
+                {
+                    break;
+                }
+                //repetição
+                case 3:
+                {
+                    break;
+                }
             }
-            if(message.Content == "!test")
-            {
-                JoinChannel(message).Start();
-            }
+            
         }
 
         private Task Log(LogMessage msg)
@@ -152,13 +176,6 @@ namespace BotFalandaum
         {
             var ac = await GetAudioClient();
             await SendAsync(ac, c.Sounds[0].Buffer);
-            /*using (var ffmpeg = Sound.CreateStream("C:\\Users\\Douglas\\Source\\Repos\\BotFalandaum\\BotFalandaum\\BotFalandaum\\audios\\airhorn\\default.mp3"))
-            using (var output = ffmpeg.StandardOutput.BaseStream)
-            using (var discord = ac.CreatePCMStream(AudioApplication.Mixed))
-            {
-                try { await output.CopyToAsync(discord); }
-                finally { await discord.FlushAsync(); }
-            }*/
             ac.Dispose();
         }
     }
